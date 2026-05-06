@@ -102,10 +102,10 @@ function clampOutput(output) {
   return trimmed;
 }
 
-const dataDir = process.cwd();
-const citiesPath = path.join(__dirname, "cities.csv");
-const itemsPath = path.join(__dirname, "items.csv");
-const connectionsPath = path.join(__dirname, "connections.csv");
+const dataDir = __dirname;
+const citiesPath = path.join(dataDir, "cities.csv");
+const itemsPath = path.join(dataDir, "items.csv");
+const connectionsPath = path.join(dataDir, "connections.csv");
 
 const cities = parseCsv(citiesPath);
 const items = parseCsv(itemsPath);
@@ -122,11 +122,15 @@ for (const row of connections) {
   cityCodesByItemCode.get(row.itemCode).add(row.cityCode);
 }
 
-const indexedItems = items.map((item) => ({
-  ...item,
-  normalizedName: normalizeText(item.name),
-  tokens: tokenize(item.name)
-}));
+const indexedItems = items.map((item) => {
+  const tokens = tokenize(item.name);
+  return {
+    ...item,
+    normalizedName: normalizeText(item.name),
+    tokens,
+    tokenSet: new Set(tokens)
+  };
+});
 
 function findBestItem(query) {
   const normalizedQuery = normalizeText(query);
@@ -143,9 +147,8 @@ function findBestItem(query) {
       score += 1000;
     }
 
-    const itemTokenSet = new Set(item.tokens);
     for (const token of queryTokens) {
-      if (itemTokenSet.has(token)) {
+      if (item.tokenSet.has(token)) {
         score += token.length >= 4 ? 3 : 1;
       }
       if (item.normalizedName.includes(token)) {
@@ -154,7 +157,7 @@ function findBestItem(query) {
     }
 
     const coverage = queryTokens.length
-      ? queryTokens.filter((t) => itemTokenSet.has(t)).length / queryTokens.length
+      ? queryTokens.filter((t) => item.tokenSet.has(t)).length / queryTokens.length
       : 0;
     score += coverage * 10;
 
