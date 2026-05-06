@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/search.js": {
-      "includeFiles": "{cities.csv,items.csv,connections.csv}"
+      "includeFiles": "api/{cities.csv,items.csv,connections.csv}"
     }
   },
   "routes": [
