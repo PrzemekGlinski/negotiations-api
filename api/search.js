@@ -189,15 +189,18 @@ module.exports = function handler(req, res) {
   }
 
   try {
-    const normalized = normalizeBody(req);
-    if (!normalized.ok) {
+    let body = req ? req.body : undefined;
+    if (typeof body === "string") {
+      body = JSON.parse(body);
+    }
+    if (!body || typeof body !== "object") {
       console.log("Returning response");
       return sendJson(res, 400, {
         output: "Brak lub niepoprawny JSON w body (oczekiwane: {\"params\":\"...\"})."
       });
     }
 
-    const params = extractParams(normalized.body);
+    const params = body?.params || "";
     console.log("Params received:", params);
     if (!params.trim()) {
       console.log("Returning response");
