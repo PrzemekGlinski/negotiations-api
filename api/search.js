@@ -103,9 +103,9 @@ function clampOutput(output) {
 }
 
 const dataDir = process.cwd();
-const citiesPath = path.join(dataDir, "cities.csv");
-const itemsPath = path.join(dataDir, "items.csv");
-const connectionsPath = path.join(dataDir, "connections.csv");
+const citiesPath = path.join(__dirname, "cities.csv");
+const itemsPath = path.join(__dirname, "items.csv");
+const connectionsPath = path.join(__dirname, "connections.csv");
 
 const cities = parseCsv(citiesPath);
 const items = parseCsv(itemsPath);
