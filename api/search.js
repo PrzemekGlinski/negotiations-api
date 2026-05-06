@@ -148,12 +148,14 @@ function extractParams(req) {
 }
 
 module.exports = function handler(req, res) {
+  console.log("Handler started");
   if (extractMethod(req) !== "POST") {
     return sendJson(res, 405, { output: "Method Not Allowed" });
   }
 
   try {
     const params = extractParams(req);
+    console.log("Params received:", params);
     if (!params.trim()) {
       return sendJson(res, 400, {
         output: "Podaj tekst w polu params, np. 'potrzebuję rezystora 1 ohm'."
@@ -161,8 +163,10 @@ module.exports = function handler(req, res) {
     }
 
     const bestItem = findBestItem(params);
+    console.log("Best item found:", bestItem);
     if (!bestItem) {
       const output = clampOutput("Nie znalazlem przedmiotu. Sprobuj podac wiecej detali, np. 'rezystor metalizowany 1 ohm'.");
+      console.log("Returning response");
       return sendJson(res, 200, { output });
     }
 
@@ -176,9 +180,11 @@ module.exports = function handler(req, res) {
       .map((code) => cityNameByCode.get(code))
       .filter(Boolean)
       .sort((a, b) => a.localeCompare(b, "pl"));
+    console.log("Cities found:", cityNames);
 
     if (cityNames.length === 0) {
       const output = clampOutput(`Brak poprawnych mapowan miast dla przedmiotu: ${bestItem.name}.`);
+      console.log("Returning response");
       return sendJson(res, 200, { output });
     }
 
@@ -186,9 +192,13 @@ module.exports = function handler(req, res) {
     output = clampOutput(output);
     if (Buffer.byteLength(output, "utf8") < 4) output = "Brak";
 
+    console.log("Returning response");
     return sendJson(res, 200, { output });
   } catch (error) {
+    console.error("Handler error:", error);
+    console.error("Handler error stack:", error && error.stack ? error.stack : "no stack");
     const output = clampOutput("Wystapil blad serwera podczas wyszukiwania.");
+    console.log("Returning response");
     return sendJson(res, 500, { output });
   }
 };
