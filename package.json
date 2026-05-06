@@ -1,0 +1,17 @@
+{
+  "name": "negotiations-api",
+  "version": "1.0.0",
+  "description": "API for AI_devs negotiations task",
+  "main": "api/search.js",
+  "scripts": {},
+  "keywords": [
+    "nodejs",
+    "express",
+    "csv"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

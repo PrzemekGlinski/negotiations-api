@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api/search.js": {
+      "includeFiles": "{cities.csv,items.csv,connections.csv}"
+    }
+  },
+  "routes": [
+    {
+      "src": "/search",
+      "dest": "/api/search.js"
+    }
+  ]
+}
