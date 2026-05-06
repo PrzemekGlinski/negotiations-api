@@ -122,9 +122,27 @@ function makeResponse(statusCode, payload) {
 }
 
 function sendJson(res, statusCode, payload) {
-  if (res && typeof res.json === "function") {
-    res.statusCode = statusCode;
-    return res.json(payload);
+  if (res) {
+    if (typeof res.setHeader === "function") {
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    }
+
+    if (typeof res.status === "function" && typeof res.json === "function") {
+      return res.status(statusCode).json(payload);
+    }
+
+    if (typeof res.end === "function") {
+      res.statusCode = statusCode;
+      return res.end(JSON.stringify(payload));
+    }
+
+    if (typeof res.send === "function") {
+      res.statusCode = statusCode;
+      return res.send(JSON.stringify(payload));
+    }
   }
   return makeResponse(statusCode, payload);
 }
@@ -161,7 +179,12 @@ function extractParams(body) {
 module.exports = function handler(req, res) {
   console.log("Handler started");
   console.log("Body:", req ? req.body : undefined);
+  if (extractMethod(req) === "OPTIONS") {
+    console.log("Returning response");
+    return sendJson(res, 200, { ok: true });
+  }
   if (extractMethod(req) !== "POST") {
+    console.log("Returning response");
     return sendJson(res, 405, { output: "Method Not Allowed" });
   }
 
@@ -177,6 +200,7 @@ module.exports = function handler(req, res) {
     const params = extractParams(normalized.body);
     console.log("Params received:", params);
     if (!params.trim()) {
+      console.log("Returning response");
       return sendJson(res, 400, {
         output: "Podaj tekst w polu params, np. 'potrzebuję rezystora 1 ohm'."
       });
@@ -193,6 +217,7 @@ module.exports = function handler(req, res) {
     const cityCodesSet = cityCodesByItemCode.get(bestItem.code);
     if (!cityCodesSet || cityCodesSet.size === 0) {
       const output = clampOutput(`Brak miast dla przedmiotu: ${bestItem.name}. Sprobuj innej frazy.`);
+      console.log("Returning response");
       return sendJson(res, 200, { output });
     }
 
