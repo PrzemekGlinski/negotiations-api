@@ -133,28 +133,48 @@ function extractMethod(req) {
   return req && typeof req.method === "string" ? req.method.toUpperCase() : "";
 }
 
-function extractParams(req) {
-  if (!req) return "";
-  if (req.body && typeof req.body.params === "string") return req.body.params;
+function normalizeBody(req) {
+  if (!req) return { ok: false, body: null };
+  if (req.body === undefined || req.body === null) return { ok: false, body: null };
+
   if (typeof req.body === "string") {
     try {
       const parsed = JSON.parse(req.body);
-      if (parsed && typeof parsed.params === "string") return parsed.params;
+      return { ok: true, body: parsed };
     } catch (_) {
-      return "";
+      return { ok: false, body: null };
     }
   }
-  return "";
+
+  if (typeof req.body === "object") {
+    return { ok: true, body: req.body };
+  }
+
+  return { ok: false, body: null };
+}
+
+function extractParams(body) {
+  if (!body || typeof body !== "object") return "";
+  return typeof body.params === "string" ? body.params : "";
 }
 
 module.exports = function handler(req, res) {
   console.log("Handler started");
+  console.log("Body:", req ? req.body : undefined);
   if (extractMethod(req) !== "POST") {
     return sendJson(res, 405, { output: "Method Not Allowed" });
   }
 
   try {
-    const params = extractParams(req);
+    const normalized = normalizeBody(req);
+    if (!normalized.ok) {
+      console.log("Returning response");
+      return sendJson(res, 400, {
+        output: "Brak lub niepoprawny JSON w body (oczekiwane: {\"params\":\"...\"})."
+      });
+    }
+
+    const params = extractParams(normalized.body);
     console.log("Params received:", params);
     if (!params.trim()) {
       return sendJson(res, 400, {
