@@ -167,15 +167,58 @@ function findBestItem(query) {
   return bestScore >= 2 ? best : null;
 }
 
+function makeResponse(statusCode, payload) {
+  return {
+    statusCode,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8"
+    },
+    body: JSON.stringify(payload)
+  };
+}
+
+function sendJson(res, statusCode, payload) {
+  if (res && typeof res.json === "function") {
+    res.statusCode = statusCode;
+    return res.json(payload);
+  }
+  return makeResponse(statusCode, payload);
+}
+
+function extractMethod(req) {
+  return req && typeof req.method === "string" ? req.method.toUpperCase() : "";
+}
+
+function extractParams(req) {
+  if (!req) return "";
+
+  if (req.body && typeof req.body.params === "string") {
+    return req.body.params;
+  }
+
+  if (typeof req.body === "string") {
+    try {
+      const parsed = JSON.parse(req.body);
+      if (parsed && typeof parsed.params === "string") {
+        return parsed.params;
+      }
+    } catch (_) {
+      return "";
+    }
+  }
+
+  return "";
+}
+
 module.exports = function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ output: "Method Not Allowed" });
+  if (extractMethod(req) !== "POST") {
+    return sendJson(res, 405, { output: "Method Not Allowed" });
   }
 
   try {
-    const params = req.body && typeof req.body.params === "string" ? req.body.params : "";
+    const params = extractParams(req);
     if (!params.trim()) {
-      return res.status(400).json({
+      return sendJson(res, 400, {
         output: "Podaj tekst w polu params, np. 'potrzebuję rezystora 1 ohm'."
       });
     }
@@ -185,7 +228,7 @@ module.exports = function handler(req, res) {
       const output = clampOutput(
         "Nie znalazlem przedmiotu. Sprobuj podac wiecej detali, np. 'rezystor metalizowany 1 ohm'."
       );
-      return res.status(200).json({ output });
+      return sendJson(res, 200, { output });
     }
 
     const cityCodesSet = cityCodesByItemCode.get(bestItem.code);
@@ -193,7 +236,7 @@ module.exports = function handler(req, res) {
       const output = clampOutput(
         `Brak miast dla przedmiotu: ${bestItem.name}. Sprobuj innej frazy.`
       );
-      return res.status(200).json({ output });
+      return sendJson(res, 200, { output });
     }
 
     const cityNames = Array.from(cityCodesSet)
@@ -205,7 +248,7 @@ module.exports = function handler(req, res) {
       const output = clampOutput(
         `Brak poprawnych mapowan miast dla przedmiotu: ${bestItem.name}.`
       );
-      return res.status(200).json({ output });
+      return sendJson(res, 200, { output });
     }
 
     let output = `Miasta: ${cityNames.join(", ")}`;
@@ -215,9 +258,9 @@ module.exports = function handler(req, res) {
       output = "Brak";
     }
 
-    return res.status(200).json({ output });
+    return sendJson(res, 200, { output });
   } catch (error) {
     const output = clampOutput("Wystapil blad serwera podczas wyszukiwania.");
-    return res.status(500).json({ output });
+    return sendJson(res, 500, { output });
   }
 };
